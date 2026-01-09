@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% set title = "TOTP Verification - Secure Messenger" %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card">
+    <header class="auth-header">
+      <div class="auth-logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+          <line x1="12" y1="18" x2="12.01" y2="18"></line>
+        </svg>
+      </div>
+      <h1 class="auth-title">Two-Factor Authentication</h1>
+      <p class="auth-subtitle">Enter the 6-digit code from your authenticator app</p>
+    </header>
+    
+    <form class="auth-form" method="POST" action="{{ url_for('totp_verify') }}" id="totpForm">
+      <div class="form-group">
+        <label class="form-label" for="code">Authentication Code</label>
+        <input 
+          type="text" 
+          class="form-input totp-input" 
+          id="code" 
+          name="code" 
+          placeholder="000000"
+          maxlength="6"
+          pattern="[0-9]{6}"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+          autofocus
+        >
+        <small class="form-hint">Enter the 6-digit code from Google Authenticator or similar app</small>
+      </div>
+      
+      <button type="submit" class="auth-button" id="submitBtn">
+        Verify
+      </button>
+      
+      <div class="backup-code-section">
+        <button type="button" class="link-button" id="showBackupBtn">
+          Use backup code instead
+        </button>
+      </div>
+      
+      <div class="form-group backup-input" id="backupSection" style="display: none;">
+        <label class="form-label" for="backup_code">Backup Code</label>
+        <input 
+          type="text" 
+          class="form-input" 
+          id="backup_code" 
+          name="backup_code" 
+          placeholder="XXXXXXXX"
+          maxlength="8"
+          autocomplete="off"
+        >
+        <small class="form-hint">Enter one of your 8-character backup codes</small>
+      </div>
+    </form>
+    
+    <div class="security-notice">
+      <svg class="security-notice-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+      </svg>
+      <p class="security-notice-text">
+        Two-factor authentication adds an extra layer of security to your account.
+      </p>
+    </div>
+    
+    <footer class="auth-footer">
+      <a href="{{ url_for('login') }}">Back to login</a>
+    </footer>
+  </div>
+</div>
+
+<style>
+.totp-input {
+  font-size: 1.5rem;
+  letter-spacing: 0.5rem;
+  text-align: center;
+  font-family: monospace;
+}
+
+.backup-code-section {
+  text-align: center;
+  margin: 1rem 0;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: var(--primary-color, #007bff);
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 0.9rem;
+}
+
+.link-button:hover {
+  color: var(--primary-hover, #0056b3);
+}
+
+.backup-input {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color, #e0e0e0);
+}
+
+.form-hint {
+  display: block;
+  margin-top: 0.5rem;
+  color: var(--text-muted, #6c757d);
+  font-size: 0.85rem;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('totpForm');
+  const submitBtn = document.getElementById('submitBtn');
+  const codeInput = document.getElementById('code');
+  const backupInput = document.getElementById('backup_code');
+  const showBackupBtn = document.getElementById('showBackupBtn');
+  const backupSection = document.getElementById('backupSection');
+  
+  // Auto-submit when 6 digits entered
+  codeInput.addEventListener('input', function() {
+    this.value = this.value.replace(/[^0-9]/g, '');
+    if (this.value.length === 6) {
+      form.submit();
+    }
+  });
+  
+  // Toggle backup code section
+  showBackupBtn.addEventListener('click', function() {
+    if (backupSection.style.display === 'none') {
+      backupSection.style.display = 'block';
+      codeInput.removeAttribute('required');
+      backupInput.setAttribute('required', '');
+      showBackupBtn.textContent = 'Use authenticator code instead';
+      backupInput.focus();
+    } else {
+      backupSection.style.display = 'none';
+      codeInput.setAttribute('required', '');
+      backupInput.removeAttribute('required');
+      showBackupBtn.textContent = 'Use backup code instead';
+      codeInput.focus();
+    }
+  });
+  
+  // Loading state on submit
+  form.addEventListener('submit', function() {
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
+  });
+});
+</script>
+{% endblock %}

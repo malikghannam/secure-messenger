@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% set title = "Login - Secure Messenger" %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card">
+    <header class="auth-header">
+      <div class="auth-logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+      </div>
+      <h1 class="auth-title">Welcome Back</h1>
+      <p class="auth-subtitle">Sign in to continue to Secure Messenger</p>
+    </header>
+    
+    <form class="auth-form" method="POST" action="{{ url_for('login') }}" id="loginForm">
+      <div class="form-group">
+        <label class="form-label" for="username">Username</label>
+        <input 
+          type="text" 
+          class="form-input" 
+          id="username" 
+          name="username" 
+          placeholder="Enter your username"
+          required
+          autocomplete="username"
+          autofocus
+        >
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input 
+          type="password" 
+          class="form-input" 
+          id="password" 
+          name="password" 
+          placeholder="Enter your password"
+          required
+          autocomplete="current-password"
+        >
+      </div>
+      
+      <button type="submit" class="auth-button" id="submitBtn">
+        Sign In
+      </button>
+    </form>
+    
+    <div class="security-notice">
+      <svg class="security-notice-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+      </svg>
+      <p class="security-notice-text">
+        Your messages are protected with end-to-end encryption. Only you and your contacts can read them.
+      </p>
+    </div>
+    
+    <footer class="auth-footer">
+      Don't have an account? <a href="{{ url_for('register') }}">Create one</a>
+    </footer>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('loginForm');
+  const submitBtn = document.getElementById('submitBtn');
+  
+  form.addEventListener('submit', function() {
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
+  });
+});
+</script>
+{% endblock %}

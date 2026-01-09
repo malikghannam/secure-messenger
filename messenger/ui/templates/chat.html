@@ -1,0 +1,754 @@
+{% extends "base.html" %}
+{% set title = "Chat - Secure Messenger" %}
+
+{% block content %}
+<div class="app-container" data-me="{{ me }}" data-relay-ws="{{ relay_ws }}" id="app">
+  
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar" role="complementary" aria-label="Contacts">
+    <header class="sidebar-header">
+      <div class="user-info">
+        <div class="user-avatar" aria-hidden="true">{{ me[0]|upper if me else '?' }}</div>
+        <div>
+          <div class="user-name">{{ me }}</div>
+          <div class="user-status">End-to-end encrypted</div>
+        </div>
+      </div>
+      <div class="sidebar-actions">
+        <button class="icon-btn" id="settingsBtn" aria-label="Settings">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+        <a href="{{ url_for('logout') }}" class="icon-btn" aria-label="Logout">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+        </a>
+      </div>
+    </header>
+    
+    <div class="search-container">
+      <div class="search-input-wrapper">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" class="search-input" id="searchInput" placeholder="Search contacts..." aria-label="Search contacts" autocomplete="off">
+      </div>
+    </div>
+    
+    <nav class="contact-list" id="contactList" role="navigation" aria-label="Contact list">
+      {% for u in users %}
+        {% if u != me %}
+        <button type="button" class="contact-item" data-peer="{{ u }}" aria-label="Chat with {{ u }}">
+          <div class="contact-avatar" aria-hidden="true">{{ u[0]|upper }}</div>
+          <div class="contact-details">
+            <div class="contact-name">{{ u }}</div>
+            <div class="contact-preview"></div>
+          </div>
+          <div class="contact-meta">
+            <div class="contact-time"></div>
+            <div class="unread-badge hidden" data-badge="{{ u }}">0</div>
+          </div>
+        </button>
+        {% endif %}
+      {% endfor %}
+      <div class="contact-empty {% if users|length > 1 %}hidden{% endif %}" id="contactEmpty">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+        <p>No contacts yet</p>
+        <p class="text-muted">Waiting for users to register...</p>
+      </div>
+    </nav>
+  </aside>
+  
+  <!-- Chat Panel -->
+  <main class="chat-panel" id="chatPanel" role="main">
+    <header class="chat-header" id="chatHeader">
+      <div class="chat-peer-info">
+        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <div class="chat-peer-avatar" id="peerAvatar" aria-hidden="true">?</div>
+        <div class="chat-peer-details">
+          <div class="chat-peer-name" id="peerName">Select a contact</div>
+          <div class="chat-peer-status" id="peerStatus">Choose someone to start chatting</div>
+        </div>
+      </div>
+      <div class="chat-header-actions">
+        <div class="connection-status disconnected" id="connectionStatus" aria-live="polite">
+          <span class="connection-dot"></span>
+          <span class="connection-text">Disconnected</span>
+        </div>
+        <div class="security-badge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <span>E2EE</span>
+        </div>
+      </div>
+    </header>
+    
+    <div class="message-list-container" id="messageList" role="log" aria-label="Messages" aria-live="polite">
+      <div class="chat-empty" id="chatEmpty">
+        <svg class="chat-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <h2 class="chat-empty-title">Secure Messenger</h2>
+        <p class="chat-empty-text">Select a contact from the sidebar to start an end-to-end encrypted conversation.</p>
+      </div>
+    </div>
+    
+    <button class="scroll-to-bottom" id="scrollToBottom" aria-label="Scroll to latest messages">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+    </button>
+    
+    <footer class="message-input-bar" id="inputBar">
+      <!-- File Attachment Button -->
+      <button type="button" class="attach-button" id="attachButton" aria-label="Attach file">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+        </svg>
+      </button>
+      <input type="file" id="fileInput" class="hidden" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt">
+      
+      <div class="message-input-wrapper">
+        <textarea id="messageInput" class="message-input" placeholder="Type a message..." rows="1" aria-label="Message input" autocomplete="off"></textarea>
+      </div>
+      <button type="button" class="send-button" id="sendButton" disabled aria-label="Send message">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </footer>
+    
+    <!-- File Drop Zone Overlay -->
+    <div class="file-drop-zone hidden" id="fileDropZone">
+      <div class="drop-zone-content">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+        <p>اسحب الملف هنا للإرسال</p>
+        <span class="drop-zone-hint">أو اضغط لاختيار ملف</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
+<!-- File Preview Modal -->
+<div class="modal hidden" id="filePreviewModal" role="dialog" aria-labelledby="filePreviewTitle" aria-modal="true">
+  <div class="modal-content file-preview-modal">
+    <header class="modal-header">
+      <h2 class="modal-title" id="filePreviewTitle">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+        </svg>
+        إرسال ملف
+      </h2>
+      <button class="icon-btn" id="filePreviewClose" aria-label="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </header>
+    <div class="modal-body">
+      <!-- File Preview Area -->
+      <div class="file-preview-area" id="filePreviewArea">
+        <div class="file-preview-placeholder">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="file-info" id="fileInfo">
+        <span class="file-name" id="fileName">filename.ext</span>
+        <span class="file-size" id="fileSize">0 KB</span>
+      </div>
+      
+      <!-- Policy Selection -->
+      <div class="policy-section">
+        <h3 class="policy-section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+          سياسات الأمان
+        </h3>
+        
+        <div class="policy-options">
+          <!-- View Once -->
+          <label class="policy-option">
+            <input type="checkbox" name="policy" value="view_once" id="policyViewOnce">
+            <div class="policy-card">
+              <div class="policy-icon view-once">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </div>
+              <div class="policy-info">
+                <span class="policy-name">عرض مرة واحدة</span>
+                <span class="policy-desc">يُحذف بعد المشاهدة</span>
+              </div>
+            </div>
+          </label>
+          
+          <!-- Time Limited -->
+          <label class="policy-option">
+            <input type="checkbox" name="policy" value="time_limited" id="policyTimeLimited">
+            <div class="policy-card">
+              <div class="policy-icon time-limited">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+              </div>
+              <div class="policy-info">
+                <span class="policy-name">محدود الوقت</span>
+                <span class="policy-desc">يُغلق بعد مدة محددة</span>
+              </div>
+            </div>
+          </label>
+          <div class="policy-config hidden" id="timeLimitedConfig">
+            <label class="config-label">مدة العرض (ثواني):</label>
+            <input type="number" id="timeLimitedDuration" class="config-input" value="30" min="5" max="300">
+          </div>
+        </div>
+      </div>
+    </div>
+    <footer class="modal-footer">
+      <button class="btn btn-secondary" id="filePreviewCancel">إلغاء</button>
+      <button class="btn btn-primary" id="filePreviewSend">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+        إرسال
+      </button>
+    </footer>
+  </div>
+</div>
+
+<!-- Secure File Viewer Modal -->
+<div class="modal hidden" id="secureFileViewerModal" role="dialog" aria-labelledby="secureViewerTitle" aria-modal="true">
+  <div class="modal-content secure-viewer-modal">
+    <header class="modal-header secure-viewer-header">
+      <div class="viewer-title-area">
+        <h2 class="modal-title" id="secureViewerTitle">عرض ملف آمن</h2>
+        <div class="viewer-policies" id="viewerPolicies"></div>
+      </div>
+      <div class="viewer-actions">
+        <div class="viewer-timer hidden" id="viewerTimer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span id="timerDisplay">00:30</span>
+        </div>
+        <button class="icon-btn" id="secureViewerClose" aria-label="Close">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+    <div class="modal-body secure-viewer-body" id="secureViewerBody">
+      <!-- Content will be loaded here -->
+      <div class="viewer-loading" id="viewerLoading">
+        <div class="loading-spinner"></div>
+        <span>جاري تحميل الملف...</span>
+      </div>
+      <div class="viewer-content hidden" id="viewerContent"></div>
+    </div>
+    <footer class="modal-footer secure-viewer-footer">
+      <div class="viewer-info">
+        <span class="viewer-filename" id="viewerFilename">filename.ext</span>
+        <span class="viewer-sender" id="viewerSender">من: user</span>
+      </div>
+      <div class="viewer-warning" id="viewerWarning">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+        <span>ملف محمي - لا يمكن حفظه أو مشاركته</span>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<!-- View Once Warning Modal -->
+<div class="modal hidden" id="viewOnceWarningModal" role="dialog" aria-modal="true">
+  <div class="modal-content view-once-warning-modal">
+    <div class="warning-content">
+      <div class="warning-icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+      </div>
+      <h3>ملف للعرض مرة واحدة</h3>
+      <p>سيتم حذف هذا الملف فور إغلاقه. هل تريد المتابعة؟</p>
+    </div>
+    <div class="warning-actions">
+      <button class="btn btn-secondary" id="viewOnceCancel">إلغاء</button>
+      <button class="btn btn-primary" id="viewOnceConfirm">عرض الملف</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal hidden" id="settingsModal" role="dialog" aria-labelledby="settingsTitle" aria-modal="true">
+  <div class="modal-content settings-modal">
+    <header class="modal-header">
+      <h2 class="modal-title" id="settingsTitle">Settings</h2>
+      <button class="icon-btn" id="settingsClose" aria-label="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </header>
+    <div class="modal-body">
+      <section class="settings-section">
+        <h3 class="settings-section-title">Profile</h3>
+        <div class="settings-avatar-container">
+          <div class="settings-avatar-preview" id="settingsAvatarPreview">
+            <span class="avatar-initial">?</span>
+          </div>
+          <div class="settings-avatar-actions">
+            <label class="btn btn-secondary" for="settingsAvatarInput">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              Upload Photo
+            </label>
+            <input type="file" id="settingsAvatarInput" accept="image/jpeg,image/png,image/webp" class="hidden">
+            <button class="btn btn-danger-outline" id="settingsDeleteAvatar">Remove</button>
+          </div>
+          <p class="settings-hint">JPEG, PNG or WebP. Max 2MB.</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="settingsDisplayName">Display Name</label>
+          <input type="text" id="settingsDisplayName" class="form-input" placeholder="Enter your display name" maxlength="50">
+          <p class="settings-hint">This is how others will see you.</p>
+        </div>
+      </section>
+      <section class="settings-section">
+        <h3 class="settings-section-title">Notifications</h3>
+        <div class="settings-toggle-row">
+          <div class="settings-toggle-info">
+            <span class="settings-toggle-label">Enable Notifications</span>
+            <span class="settings-toggle-desc">Get notified when you receive new messages</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="settingsNotifications" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="settings-toggle-row">
+          <div class="settings-toggle-info">
+            <span class="settings-toggle-label">Notification Sound</span>
+            <span class="settings-toggle-desc">Play a sound for new messages</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="settingsSound" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </section>
+      
+      <!-- Two-Factor Authentication Section -->
+      <section class="settings-section">
+        <h3 class="settings-section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+          Two-Factor Authentication
+        </h3>
+        
+        <!-- TOTP Status Display -->
+        <div class="totp-status-card" id="totpStatusCard">
+          <div class="totp-status-header">
+            <div class="totp-status-icon" id="totpStatusIcon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+            </div>
+            <div class="totp-status-info">
+              <span class="totp-status-label" id="totpStatusLabel">Loading...</span>
+              <span class="totp-status-desc" id="totpStatusDesc">Checking 2FA status...</span>
+            </div>
+            <div class="totp-status-badge" id="totpStatusBadge">
+              <span class="badge badge-loading">...</span>
+            </div>
+          </div>
+          
+          <!-- Action Buttons -->
+          <div class="totp-actions" id="totpActions">
+            <button class="btn btn-primary totp-btn" id="totpEnableBtn" style="display: none;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+              Enable 2FA
+            </button>
+            <button class="btn btn-danger-outline totp-btn" id="totpDisableBtn" style="display: none;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+              </svg>
+              Disable 2FA
+            </button>
+            <button class="btn btn-secondary totp-btn" id="totpRegenerateBtn" style="display: none;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+              </svg>
+              New Backup Codes
+            </button>
+          </div>
+        </div>
+        
+        <!-- Info Box -->
+        <div class="totp-info-box">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          <p>Two-factor authentication adds an extra layer of security. We recommend using <strong>Google Authenticator</strong> or <strong>Authy</strong> app.</p>
+        </div>
+      </section>
+    </div>
+    <footer class="modal-footer">
+      <button class="btn btn-secondary" id="settingsCancel">Cancel</button>
+      <button class="btn btn-primary" id="settingsSave">Save Changes</button>
+    </footer>
+  </div>
+</div>
+
+<!-- TOTP Setup Wizard Modal -->
+<div class="modal hidden" id="totpSetupModal" role="dialog" aria-labelledby="totpSetupTitle" aria-modal="true">
+  <div class="modal-content totp-wizard-modal">
+    <header class="modal-header">
+      <h2 class="modal-title" id="totpSetupTitle">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+        Enable Two-Factor Authentication
+      </h2>
+      <button class="icon-btn" id="totpSetupClose" aria-label="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </header>
+    
+    <!-- Progress Steps -->
+    <div class="totp-wizard-progress">
+      <div class="wizard-step active" data-step="1">
+        <div class="step-number">1</div>
+        <span class="step-label">Install App</span>
+      </div>
+      <div class="wizard-step-line"></div>
+      <div class="wizard-step" data-step="2">
+        <div class="step-number">2</div>
+        <span class="step-label">Scan QR</span>
+      </div>
+      <div class="wizard-step-line"></div>
+      <div class="wizard-step" data-step="3">
+        <div class="step-number">3</div>
+        <span class="step-label">Verify</span>
+      </div>
+      <div class="wizard-step-line"></div>
+      <div class="wizard-step" data-step="4">
+        <div class="step-number">4</div>
+        <span class="step-label">Backup</span>
+      </div>
+    </div>
+    
+    <div class="modal-body totp-wizard-body">
+      <!-- Step 1: Install App -->
+      <div class="wizard-panel" id="totpStep1">
+        <div class="wizard-icon">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+            <line x1="12" y1="18" x2="12.01" y2="18"></line>
+          </svg>
+        </div>
+        <h3 class="wizard-title">Install an Authenticator App</h3>
+        <p class="wizard-desc">Download and install one of these authenticator apps on your phone:</p>
+        <div class="app-recommendations">
+          <div class="app-card recommended">
+            <div class="app-icon google-auth"></div>
+            <div class="app-info">
+              <span class="app-name">Google Authenticator</span>
+              <span class="app-badge">Recommended</span>
+            </div>
+          </div>
+          <div class="app-card">
+            <div class="app-icon authy"></div>
+            <div class="app-info">
+              <span class="app-name">Authy</span>
+              <span class="app-desc">Multi-device sync</span>
+            </div>
+          </div>
+          <div class="app-card">
+            <div class="app-icon microsoft-auth"></div>
+            <div class="app-info">
+              <span class="app-name">Microsoft Authenticator</span>
+              <span class="app-desc">Cloud backup</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Step 2: Scan QR Code -->
+      <div class="wizard-panel hidden" id="totpStep2">
+        <h3 class="wizard-title">Scan QR Code</h3>
+        <p class="wizard-desc">Open your authenticator app and scan this QR code:</p>
+        <div class="qr-container" id="qrContainer">
+          <div class="qr-loading">
+            <div class="loading-spinner"></div>
+            <span>Generating QR code...</span>
+          </div>
+        </div>
+        <div class="manual-entry">
+          <p class="manual-label">Can't scan? Enter this code manually:</p>
+          <div class="secret-code-box">
+            <code id="totpSecretCode">Loading...</code>
+            <button class="copy-btn" id="copySecretBtn" aria-label="Copy code">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Step 3: Verify Code -->
+      <div class="wizard-panel hidden" id="totpStep3">
+        <div class="wizard-icon success-icon">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            <polyline points="9 12 11 14 15 10"></polyline>
+          </svg>
+        </div>
+        <h3 class="wizard-title">Verify Setup</h3>
+        <p class="wizard-desc">Enter the 6-digit code from your authenticator app:</p>
+        <div class="verify-code-input">
+          <input type="text" id="totpVerifyCode" class="code-input" maxlength="6" placeholder="000000" autocomplete="off" inputmode="numeric" pattern="[0-9]*">
+        </div>
+        <p class="verify-hint">The code changes every 30 seconds</p>
+        <div class="verify-error hidden" id="verifyError">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+          </svg>
+          <span id="verifyErrorText">Invalid code. Please try again.</span>
+        </div>
+      </div>
+      
+      <!-- Step 4: Backup Codes -->
+      <div class="wizard-panel hidden" id="totpStep4">
+        <div class="wizard-icon success-icon">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        </div>
+        <h3 class="wizard-title success-title">2FA Enabled Successfully!</h3>
+        <p class="wizard-desc">Save these backup codes in a safe place. You can use them to access your account if you lose your phone.</p>
+        <div class="backup-codes-container" id="backupCodesContainer">
+          <div class="backup-codes-grid" id="backupCodesGrid">
+            <!-- Codes will be inserted here -->
+          </div>
+          <div class="backup-codes-actions">
+            <button class="btn btn-secondary" id="copyBackupCodesBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              Copy All
+            </button>
+            <button class="btn btn-secondary" id="downloadBackupCodesBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              Download
+            </button>
+          </div>
+        </div>
+        <div class="backup-warning">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          <span>Each backup code can only be used once. Store them securely!</span>
+        </div>
+      </div>
+    </div>
+    
+    <footer class="modal-footer totp-wizard-footer">
+      <button class="btn btn-secondary" id="totpWizardBack" style="display: none;">Back</button>
+      <button class="btn btn-primary" id="totpWizardNext">Next</button>
+    </footer>
+  </div>
+</div>
+
+<!-- TOTP Disable Confirmation Modal -->
+<div class="modal hidden" id="totpDisableModal" role="dialog" aria-labelledby="totpDisableTitle" aria-modal="true">
+  <div class="modal-content totp-disable-modal">
+    <header class="modal-header">
+      <h2 class="modal-title" id="totpDisableTitle">Disable Two-Factor Authentication</h2>
+      <button class="icon-btn" id="totpDisableClose" aria-label="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </header>
+    <div class="modal-body">
+      <div class="disable-warning">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        <p>Disabling 2FA will make your account less secure. Are you sure you want to continue?</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="disableTotpCode">Enter your current 2FA code to confirm:</label>
+        <input type="text" id="disableTotpCode" class="form-input code-input" maxlength="6" placeholder="000000" autocomplete="off" inputmode="numeric" pattern="[0-9]*">
+      </div>
+      <div class="verify-error hidden" id="disableError">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
+        <span id="disableErrorText">Invalid code. Please try again.</span>
+      </div>
+    </div>
+    <footer class="modal-footer">
+      <button class="btn btn-secondary" id="totpDisableCancel">Cancel</button>
+      <button class="btn btn-danger" id="totpDisableConfirm">Disable 2FA</button>
+    </footer>
+  </div>
+</div>
+
+<!-- TOTP Regenerate Backup Codes Modal -->
+<div class="modal hidden" id="totpRegenerateModal" role="dialog" aria-labelledby="totpRegenerateTitle" aria-modal="true">
+  <div class="modal-content totp-regenerate-modal">
+    <header class="modal-header">
+      <h2 class="modal-title" id="totpRegenerateTitle">Generate New Backup Codes</h2>
+      <button class="icon-btn" id="totpRegenerateClose" aria-label="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </header>
+    <div class="modal-body">
+      <!-- Verify Step -->
+      <div id="regenerateVerifyStep">
+        <p class="wizard-desc">Enter your current 2FA code to generate new backup codes:</p>
+        <div class="form-group">
+          <input type="text" id="regenerateTotpCode" class="form-input code-input" maxlength="6" placeholder="000000" autocomplete="off" inputmode="numeric" pattern="[0-9]*">
+        </div>
+        <div class="verify-error hidden" id="regenerateError">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+          </svg>
+          <span id="regenerateErrorText">Invalid code. Please try again.</span>
+        </div>
+        <div class="regenerate-warning">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          <span>This will invalidate all your existing backup codes.</span>
+        </div>
+      </div>
+      <!-- New Codes Step -->
+      <div id="regenerateCodesStep" class="hidden">
+        <div class="wizard-icon success-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        </div>
+        <h3 class="wizard-title">New Backup Codes Generated!</h3>
+        <div class="backup-codes-container">
+          <div class="backup-codes-grid" id="newBackupCodesGrid">
+            <!-- Codes will be inserted here -->
+          </div>
+          <div class="backup-codes-actions">
+            <button class="btn btn-secondary" id="copyNewBackupCodesBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              Copy All
+            </button>
+            <button class="btn btn-secondary" id="downloadNewBackupCodesBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              Download
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <footer class="modal-footer">
+      <button class="btn btn-secondary" id="totpRegenerateCancel">Cancel</button>
+      <button class="btn btn-primary" id="totpRegenerateConfirm">Generate New Codes</button>
+      <button class="btn btn-primary hidden" id="totpRegenerateDone">Done</button>
+    </footer>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script src="{{ url_for('static', filename='js/totp-settings.js') }}"></script>
+<script src="{{ url_for('static', filename='js/file-sharing.js') }}"></script>
+{% endblock %}

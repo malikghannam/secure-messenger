@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Secure end-to-end encrypted messaging">
+  <meta name="theme-color" content="#0b141a">
+  <title>{{ title or "Secure Messenger" }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <!-- Preconnect to socket.io CDN -->
+  <link rel="preconnect" href="https://cdn.socket.io">
+</head>
+<body>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="toast-container" id="flashToasts">
+        {% for cat, msg in messages %}
+          <div class="toast {{ 'error' if cat == 'error' else 'success' if cat == 'ok' else 'info' }}">
+            <svg class="toast-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              {% if cat == 'error' %}
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+              {% elif cat == 'ok' %}
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              {% else %}
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              {% endif %}
+            </svg>
+            <div class="toast-content">
+              <span class="toast-message">{{ msg }}</span>
+            </div>
+            <button class="toast-dismiss" onclick="this.parentElement.remove()" aria-label="Dismiss">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+        {% endfor %}
+      </div>
+      <script>
+        // Auto-dismiss flash toasts after 5 seconds
+        setTimeout(function() {
+          var toasts = document.querySelectorAll('#flashToasts .toast');
+          toasts.forEach(function(toast) {
+            toast.classList.add('hiding');
+            setTimeout(function() { toast.remove(); }, 300);
+          });
+        }, 5000);
+      </script>
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

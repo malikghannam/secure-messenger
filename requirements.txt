@@ -1,0 +1,35 @@
+# ===================================
+# Secure Messenger - Requirements
+# ===================================
+
+# Core Web Framework
+flask>=2.0.0
+flask-sqlalchemy>=3.1.0
+flask-socketio>=5.3.0
+
+# HTTP & Networking
+requests>=2.25.0
+python-socketio>=5.11.0
+eventlet>=0.36.0
+
+# Cryptography
+cryptography>=3.4.0
+# liboqs-python - Post-quantum crypto (install from: https://github.com/open-quantum-safe/liboqs-python)
+
+# TOTP Two-Factor Authentication
+pyotp>=2.9.0
+qrcode>=7.4.2
+
+# Image Processing
+Pillow>=9.0.0
+
+# Configuration
+pyyaml>=6.0
+python-dotenv>=1.0.0
+
+# Database
+werkzeug>=3.0.0
+
+# Testing (optional)
+pytest>=7.0.0
+hypothesis>=6.0.0
