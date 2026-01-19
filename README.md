@@ -30,7 +30,6 @@ secure_messenger/
 
 ### 1. تشفير ما بعد الكم (Post-Quantum Cryptography)
 - **Kyber-768**: لتبادل المفاتيح (Key Encapsulation)
-- **Dilithium**: للتوقيعات الرقمية
 - **X3DH + Double Ratchet**: بروتوكول Signal مع تحسينات PQ
 
 ### 2. المصادقة الثنائية (TOTP)
@@ -82,11 +81,20 @@ python main.py
 
 ## 📁 ملفات المتطلبات
 
-- `requirements.txt` - متطلبات Python الرئيسية
-- `relay_server/requirements.txt` - متطلبات خادم الترحيل
+- `requirements.txt` - متطلبات بايثون الرئيسية
+- `relay_server/requirements.txt` - متطلبات السيرفر 
 
 
+<<<<<<< HEAD
 
+=======
+```bash
+# تشغيل اختبارات TOTP
+pytest tests/test_totp_properties.py -v
+```
+
+#
+>>>>>>> ea5b05d9b9eaebe2e5ba2c0bb8b7a7f5e36af613
 ## 🛠️ التقنيات المستخدمة
 
 | التقنية | الاستخدام |
@@ -102,3 +110,10 @@ python main.py
 ## 👥 المساهمون
 
 - [محمد مالك غنام]
+<<<<<<< HEAD
+=======
+
+## 📄 الرخصة
+
+.
+>>>>>>> ea5b05d9b9eaebe2e5ba2c0bb8b7a7f5e36af613
