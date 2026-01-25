@@ -140,12 +140,7 @@ Full source code available at: [GitHub Repository Link]
 ## 📞 Contact | التواصل
 
 For questions or collaboration:
-- GitHub: [Your GitHub Profile]
-- Email: [Your Email]
-
-## 📜 License | الرخصة
-
-This report is provided for academic and educational purposes.
+- Email: [ghannammalk65@gmail.com]
 
 ---
 

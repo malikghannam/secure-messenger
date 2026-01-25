@@ -1,29 +1,70 @@
 # 🔐 Secure Messenger - Post-Quantum Encrypted Messaging
 
-نظام مراسلة آمن مع تشفير ما بعد الكم (Post-Quantum Cryptography) ومصادقة ثنائية العامل (TOTP).
+<div dir="rtl">
 
-## 📋 نظرة عامة
+## تطبيق مراسلة آمن مع تشفير ما بعد الكم
 
-Secure Messenger هو تطبيق مراسلة فورية يوفر:
-- **تشفير ما بعد الكم (PQC)**: حماية ضد هجمات الحواسيب الكمومية المستقبلية
-- **مصادقة ثنائية العامل (2FA/TOTP)**: طبقة أمان إضافية لتسجيل الدخول
-- **مشاركة ملفات آمنة**: مع سياسات أمنية (عرض مرة واحدة، محدود الوقت)
-- **تشفير من طرف لطرف (E2E)**: الرسائل مشفرة بين المرسل والمستلم فقط
+نظام مراسلة فوري متقدم يجمع بين التشفير التقليدي والتشفير ما بعد الكم لحماية الاتصالات من التهديدات الكمومية المستقبلية.
 
-## 🏗️ البنية المعمارية
+</div>
+
+[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Post-Quantum](https://img.shields.io/badge/Security-Post--Quantum-red.svg)](https://csrc.nist.gov/projects/post-quantum-cryptography)
+
+## 📋 Overview | نظرة عامة
+
+**Secure Messenger** is an end-to-end encrypted messaging application that combines traditional cryptography with post-quantum algorithms to protect against future quantum computer attacks.
+
+<div dir="rtl">
+
+**Secure Messenger** هو تطبيق مراسلة مشفر من طرف لطرف يجمع بين التشفير التقليدي وخوارزميات ما بعد الكم للحماية من هجمات الحواسيب الكمومية المستقبلية.
+
+</div>
+
+### ✨ Key Features | الميزات الرئيسية
+
+- 🔐 **Post-Quantum Cryptography**: Hybrid protocol combining X3DH with Kyber-512
+- 🔑 **End-to-End Encryption**: Messages encrypted using XChaCha20-Poly1305
+- 🔄 **Double Ratchet**: Forward secrecy and post-compromise security
+- 🛡️ **Two-Factor Authentication (TOTP)**: RFC 6238 compliant
+- 📁 **Secure File Sharing**: View-once and time-limited policies
+- 🕵️ **Server Blindness**: Relay server cannot read message content
+- ✅ **Comprehensive Testing**: 19 security tests + 16 performance benchmarks
+
+<div dir="rtl">
+
+- 🔐 **تشفير ما بعد الكم**: بروتوكول هجين يجمع X3DH مع Kyber-512
+- 🔑 **تشفير من طرف لطرف**: رسائل مشفرة باستخدام XChaCha20-Poly1305
+- 🔄 **Double Ratchet**: سرية أمامية وحماية بعد الاختراق
+- 🛡️ **مصادقة ثنائية (TOTP)**: متوافق مع RFC 6238
+- 📁 **مشاركة ملفات آمنة**: سياسات عرض مرة واحدة ومحدودة الوقت
+- 🕵️ **خادم أعمى**: السيرفر لا يستطيع قراءة محتوى الرسائل
+- ✅ **اختبارات شاملة**: 19 اختبار أمني + 16 اختبار أداء
+
+</div>
+
+## 🏗️ Architecture | البنية المعمارية
 
 ```
 secure_messenger/
-├── messenger/                 # التطبيق الرئيسي
-│   ├── crypto/               # طبقة التشفير (Kyber, Dilithium, X3DH)
-│   ├── pq_backend/           # واجهة التشفير ما بعد الكم
-│   ├── message/              # إدارة الجلسات والرسائل
-│   ├── transport/            # طبقة الشبكة (WebSocket)
-│   ├── auth/                 # المصادقة (TOTP, Email Verification)
-│   ├── files/                # مشاركة الملفات الآمنة
-│   └── ui/                   # واجهة المستخدم (Flask + HTML/JS)
-├── relay_server/             # خادم الترحيل (Flask + SQLite)
-└── tests/                    # اختبارات الوحدة
+├── messenger/                 # Main application | التطبيق الرئيسي
+│   ├── crypto/               # Cryptography layer (PQX3DH, Double Ratchet)
+│   │   ├── pqx3dh.py        # Hybrid X3DH + Kyber protocol
+│   │   ├── ratchet.py       # Double Ratchet implementation
+│   │   └── crypto_utils.py  # XChaCha20-Poly1305 encryption
+│   ├── auth/                 # Authentication (TOTP, QR codes)
+│   ├── files/                # Secure file sharing with policies
+│   ├── transport/            # Network layer (WebSocket)
+│   ├── message/              # Session and message management
+│   └── ui/                   # User interface (Flask + HTML/JS)
+├── relay_server/             # Blind relay server (Flask + SQLite)
+│   ├── app.py               # Main server application
+│   ├── totp_routes.py       # TOTP authentication routes
+│   └── file_routes.py       # File transfer routes
+└── tests/                    # Comprehensive test suite
+    ├── security/            # Security tests (entropy, timing, replay)
+    └── benchmarks/          # Performance benchmarks
 ```
 
 ## 🔒 الميزات الأمنية
@@ -110,10 +151,5 @@ pytest tests/test_totp_properties.py -v
 ## 👥 المساهمون
 
 - [محمد مالك غنام]
-<<<<<<< HEAD
 =======
-
-## 📄 الرخصة
-
-.
 >>>>>>> ea5b05d9b9eaebe2e5ba2c0bb8b7a7f5e36af613

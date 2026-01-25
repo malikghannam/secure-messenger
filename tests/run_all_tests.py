@@ -146,31 +146,36 @@ def _print_security_summary(results: dict) -> None:
 
 def generate_report(benchmark_results: dict, security_results: dict, output_dir: str) -> None:
     """Generate test reports."""
-    from tests.report_generator import ReportGenerator
-    
-    generator = ReportGenerator()
-    
-    # Add benchmark results
-    for name, results in benchmark_results.items():
-        generator.add_benchmark_results(name, results)
-    
-    # Add security results
-    for name, results in security_results.items():
-        generator.add_security_results(name, results)
-    
     # Create output directory
     os.makedirs(output_dir, exist_ok=True)
     
-    # Generate Markdown report
-    md_path = os.path.join(output_dir, "SECURITY_PERFORMANCE_REPORT.md")
-    generator.save_markdown(md_path)
+    # Generate simple Markdown report
+    md_path = os.path.join(output_dir, "TEST_RESULTS.md")
     
-    # Generate Word document
-    try:
-        docx_path = os.path.join(output_dir, "SECURITY_PERFORMANCE_REPORT.docx")
-        generator.generate_word_document(docx_path)
-    except Exception as e:
-        print(f"Note: Could not generate Word document: {e}")
+    with open(md_path, 'w', encoding='utf-8') as f:
+        f.write("# Test Results\n\n")
+        f.write(f"Generated: {datetime.now().isoformat()}\n\n")
+        
+        # Benchmark results
+        if benchmark_results:
+            f.write("## Performance Benchmarks\n\n")
+            for name, results in benchmark_results.items():
+                f.write(f"### {results.get('suite_name', name)}\n\n")
+                for result in results.get('results', []):
+                    f.write(f"- {result.get('name', 'Test')}: {result.get('value', 'N/A')}\n")
+                f.write("\n")
+        
+        # Security results
+        if security_results:
+            f.write("## Security Tests\n\n")
+            for name, results in security_results.items():
+                summary = results.get('summary', {})
+                f.write(f"### {results.get('suite_name', name)}\n\n")
+                f.write(f"- Passed: {summary.get('passed', 0)}/{summary.get('total', 0)}\n")
+                f.write(f"- Warnings: {summary.get('warnings', 0)}\n")
+                f.write(f"- Failed: {summary.get('failed', 0)}\n\n")
+    
+    print(f"Report saved to: {md_path}")
 
 
 def print_final_summary(benchmark_results: dict, security_results: dict) -> None:
